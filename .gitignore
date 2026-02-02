@@ -1,3 +1,23 @@
 node_modules
 .env
+.env.*
 NOTES.md
+
+# Output
+exports/
+*.csv
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo

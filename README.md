@@ -20,40 +20,44 @@ Create a `.env` file in project root (not committed):
 
 ```bash
 echo "ETHERSCAN_API_KEY=YOUR_KEY" >> .env
-echo "BASE_URL=https://api.etherscan.io/api" >> .env
+echo "CHAIN_IDS=1,137,42161" >> .env  # Ethereum, Polygon, Arbitrum (comma-separated)
 ```
+
+You can specify multiple chains with `CHAIN_IDS` (comma-separated) or a single chain with `CHAIN_ID`. Defaults to Ethereum mainnet (1). Uses the Etherscan v2 unified API endpoint.
 
 4) Run the server
 
 ```bash
 npm run start
-# Health check
-curl http://localhost:3000/health
 
-# Export CSV via HTTP (downloads file)
-open "http://localhost:3000/export?address=0xa39b189482f984388a34460636fea9eb181ad1a6"
+# Export via HTTP
+curl "http://localhost:3000/export?address=0xa39b189482f984388a34460636fea9eb181ad1a6"
 ```
 
 5) Use the CLI
 
 ```bash
-# Export to CSV
+# Export to CSV (auto-generated filename)
 npx eth-export 0xa39b189482f984388a34460636fea9eb181ad1a6
 
-# Custom output dir
-npx eth-export 0xd620AADaBaA20d2af700853C4504028cba7C3333 -o ./my-exports
+# Export with custom filename
+npx eth-export 0xa39b189482f984388a34460636fea9eb181ad1a6 my-transactions.csv
 ```
+
+CSV files are saved to the `exports/` directory.
 
 ### What it does
 
+- Fetches transactions from multiple EVM chains via Etherscan v2 API
 - Calls Etherscan account endpoints to fetch:
   - Normal (external) txs
   - Internal transactions
   - ERC-20 token transfers
   - ERC-721 NFT transfers
   - ERC-1155 transfers
+- Writes CSV incrementally per chain (partial results saved if a chain fails)
 - Normalizes into a single CSV with columns:
-  - `transactionHash, dateTime, from, to, transactionType, assetContract, assetSymbol, tokenId, value, gasFeeEth`
+  - `chainId, transactionHash, dateTime, from, to, transactionType, assetContract, assetSymbol, tokenId, value, gasFeeEth`
 
 ### Notes and Assumptions
 
@@ -70,8 +74,7 @@ npx eth-export 0xd620AADaBaA20d2af700853C4504028cba7C3333 -o ./my-exports
 
 ### Endpoints
 
-- `GET /health` → `{ ok: true }`
-- `GET /export?address=<ethAddress>` → returns a CSV file download
+- `GET /export?address=<ethAddress>` → exports transactions and returns JSON with file path and count
 
 ### Sample Addresses (for testing)
 
@@ -81,6 +84,7 @@ npx eth-export 0xd620AADaBaA20d2af700853C4504028cba7C3333 -o ./my-exports
 
 ### CSV Columns
 
+- chainId (network identifier: 1=Ethereum, 137=Polygon, etc.)
 - transactionHash
 - dateTime (ISO string)
 - from

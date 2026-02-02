@@ -4,14 +4,21 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 const API_KEY = process.env.ETHERSCAN_API_KEY || '';
-const BASE_URL = process.env.BASE_URL || 'https://api.etherscan.io/v2/api';
-const CHAIN_ID = process.env.CHAIN_ID || '1'; // Default to Ethereum mainnet
+const BASE_URL = 'https://api.etherscan.io/v2/api'; // Etherscan v2 unified endpoint
 
-async function getData(action, address) {
-  console.log(`Calling API: ${action} for ${address}`);
-  
+// Parse chain IDs: prefer CHAIN_IDS (comma-separated), fall back to CHAIN_ID, default to '1'
+export function getChainIds() {
+  if (process.env.CHAIN_IDS) {
+    return process.env.CHAIN_IDS.split(',').map(id => id.trim());
+  }
+  return [process.env.CHAIN_ID || '1'];
+}
+
+async function getData(action, address, chainId) {
+  console.log(`Calling API: ${action} for ${address} on chain ${chainId}`);
+
   const { data } = await axios.get(BASE_URL, {
-    params: { chainid: CHAIN_ID, module: 'account', action, address, apikey: API_KEY }
+    params: { chainid: chainId, module: 'account', action, address, apikey: API_KEY }
   });
   
   console.log(`API response status: ${data?.status}, message: ${data?.message}`);
@@ -36,29 +43,30 @@ function wait(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-export async function getTransactions(address) {
-  console.log('Fetching transactions...');
-  
+export async function getTransactions(address, chainId) {
+  console.log(`Fetching transactions for chain ${chainId}...`);
+
   // Sequential calls with 1 second delay between each (respects 2/sec limit)
-  const normal = await getData('txlist', address);
+  const normal = await getData('txlist', address, chainId);
   console.log('Got normal transactions');
   await wait(1000); // Wait 1 second
-  
-  const internal = await getData('txlistinternal', address);
+
+  const internal = await getData('txlistinternal', address, chainId);
   console.log('Got internal transactions');
   await wait(1000); // Wait 1 second
-  
-  const erc20 = await getData('tokentx', address);
+
+  const erc20 = await getData('tokentx', address, chainId);
   console.log('Got ERC-20 transactions');
   await wait(1000); // Wait 1 second
-  
-  const erc721 = await getData('tokennfttx', address);
+
+  const erc721 = await getData('tokennfttx', address, chainId);
   console.log('Got ERC-721 transactions');
   await wait(1000); // Wait 1 second
-  
-  const erc1155 = await getData('token1155tx', address);
+
+  const erc1155 = await getData('token1155tx', address, chainId);
   console.log('Got ERC-1155 transactions');
-  
+
   return { normal, internal, erc20, erc721, erc1155 };
 }
+
 

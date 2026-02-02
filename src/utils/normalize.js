@@ -2,12 +2,13 @@ function toEth(wei) {
   return (Number(wei) / 1e18).toFixed(6);
 }
 
-export function normalizeTransactions(data) {
+export function normalizeTransactions(data, chainId) {
   const rows = [];
-  
+
   // Normal ETH transactions
   for (const tx of data.normal || []) {
     rows.push({
+      chainId,
       transactionHash: tx.hash,
       dateTime: new Date(tx.timeStamp * 1000).toISOString(),
       from: tx.from,
@@ -20,10 +21,11 @@ export function normalizeTransactions(data) {
       gasFeeEth: toEth(tx.gasPrice * tx.gasUsed)
     });
   }
-  
+
   // ERC-20 tokens
   for (const tx of data.erc20 || []) {
     rows.push({
+      chainId,
       transactionHash: tx.hash,
       dateTime: new Date(tx.timeStamp * 1000).toISOString(),
       from: tx.from,
@@ -36,10 +38,11 @@ export function normalizeTransactions(data) {
       gasFeeEth: ''
     });
   }
-  
+
   // ERC-721 NFTs
   for (const tx of data.erc721 || []) {
     rows.push({
+      chainId,
       transactionHash: tx.hash,
       dateTime: new Date(tx.timeStamp * 1000).toISOString(),
       from: tx.from,
@@ -52,8 +55,7 @@ export function normalizeTransactions(data) {
       gasFeeEth: ''
     });
   }
-  
+
   return rows;
 }
-
 
